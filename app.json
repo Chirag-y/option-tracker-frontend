@@ -1,0 +1,8 @@
+{
+  "expo": {
+    "name": "Options Tracker",
+    "slug": "options-tracker",
+    "platforms": ["android"],
+    "version": "1.0.0"
+  }
+}
