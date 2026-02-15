@@ -1,8 +1,30 @@
 {
   "expo": {
-    "name": "Options Tracker",
+    "name": "Market Money Tracking",
     "slug": "options-tracker",
-    "platforms": ["android"],
-    "version": "1.0.0"
+    "icon": "./assets/images/app_icon_512x512.png",
+    "userInterfaceStyle": "automatic",
+    "platforms": [
+      "android"
+    ],
+    "splash": {
+      "image": "./assets/images/splash_screen_1024x1024.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0e1814"
+    },
+    "android": {
+      "userInterfaceStyle": "automatic",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/app_icon_512x512.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.chiragyadav.marketmoneytracking"
+    },
+    "version": "1.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "fbd07a07-3c29-4457-bc2e-21e2b76c1edc"
+      }
+    }
   }
 }
