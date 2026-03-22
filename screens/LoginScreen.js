@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     alignSelf: "center"
   },
   title: {
-    fontSize: 30
+    fontSize: 24
   },
   subtitle: {
     marginTop: 4,

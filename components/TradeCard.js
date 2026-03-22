@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { money } from "../theme";
+import { formatDisplayDate } from "../utils/date";
 
 export default function TradeCard({ trade, onDelete, onEdit }) {
   const { theme } = useAppTheme();
@@ -18,11 +19,12 @@ export default function TradeCard({ trade, onDelete, onEdit }) {
         </Text>
       </View>
       <Text style={[styles.meta, { color: theme.colors.muted, fontFamily: theme.fonts.regular }]}>
-        {trade.optionType} | Strike {trade.strikePrice} | Charges {money(trade.charges)}
+        Charges {money(trade.charges)}
+        {/* {trade.optionType} | Strike {trade.strikePrice} | Charges {money(trade.charges)} */}
       </Text>
       <View style={styles.row}>
         <Text style={[styles.date, { color: theme.colors.muted, fontFamily: theme.fonts.regular }]}>
-          {new Date(trade.tradeDate).toISOString().slice(0, 10)}
+          {formatDisplayDate(trade.tradeDate)}
         </Text>
         <View style={styles.actions}>
           {onEdit ? (

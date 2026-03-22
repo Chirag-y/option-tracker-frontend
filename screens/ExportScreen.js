@@ -5,6 +5,7 @@ import api from "../services/api";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { useDialog } from "../hooks/useDialog";
 import { parseApiError } from "../utils/errors";
+import { formatMonthYear } from "../utils/date";
 import { money } from "../theme";
 
 export default function ExportScreen() {
@@ -42,7 +43,7 @@ export default function ExportScreen() {
       {monthly.map((m) => (
         <View key={m._id} style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
           <View style={styles.row}>
-            <Text style={[styles.month, { color: theme.colors.text, fontFamily: theme.fonts.bold }]}>{m._id}</Text>
+            <Text style={[styles.month, { color: theme.colors.text, fontFamily: theme.fonts.bold }]}>{formatMonthYear(m._id)}</Text>
             <Text style={[styles.pnl, { color: m.netPnl >= 0 ? theme.colors.profit : theme.colors.loss, fontFamily: theme.fonts.bold }]}>
               {money(m.netPnl)}
             </Text>

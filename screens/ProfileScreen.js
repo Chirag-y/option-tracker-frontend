@@ -6,6 +6,7 @@ import { AuthContext } from "../context/AuthContext";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { useDialog } from "../hooks/useDialog";
 import { parseApiError } from "../utils/errors";
+import { formatDisplayDate } from "../utils/date";
 
 export default function ProfileScreen() {
   const { theme } = useAppTheme();
@@ -42,14 +43,16 @@ export default function ProfileScreen() {
 
   const updateProfile = async () => {
     try {
-      await api.patch("/users/me", {
+      const data = await api.patch("/users/me", {
         name: String(name || "").trim(),
         investedAmount: Number(investedAmount || 0),
         sharePercentage: Number(sharePercentage || 0)
       });
+      // console.log({data})
       await refreshMe();
       dialog.show("Saved", "Profile updated");
     } catch (err) {
+      console.log({err});
       dialog.show("Profile error", parseApiError(err, "Failed to update profile"));
     }
   };
@@ -122,7 +125,7 @@ export default function ProfileScreen() {
         <TextInput style={[styles.input, { borderColor: theme.colors.border, color: theme.colors.text, backgroundColor: theme.colors.cardSolid }]} keyboardType="numeric" value={withdrawAmount} onChangeText={setWithdrawAmount} />
         <Text style={[styles.label, { color: theme.colors.text, fontFamily: theme.fonts.medium }]}>Date</Text>
         <Pressable style={[styles.input, { borderColor: theme.colors.border, backgroundColor: theme.colors.cardSolid }]} onPress={() => setDateModal(true)}>
-          <Text style={{ color: theme.colors.text, fontFamily: theme.fonts.regular }}>{withdrawDate}</Text>
+          <Text style={{ color: theme.colors.text, fontFamily: theme.fonts.regular }}>{formatDisplayDate(withdrawDate)}</Text>
         </Pressable>
         <Pressable style={[styles.btn, { backgroundColor: theme.colors.primary }]} onPress={addWithdrawal}>
           <Text style={{ color: "#fff", fontFamily: theme.fonts.bold }}>Add Withdrawal</Text>
@@ -134,7 +137,7 @@ export default function ProfileScreen() {
               Rs {Number(w.amount || 0).toFixed(2)}
             </Text>
             <Text style={{ color: theme.colors.muted, fontFamily: theme.fonts.regular }}>
-              {new Date(w.withdrawalDate).toISOString().slice(0, 10)}
+              {formatDisplayDate(w.withdrawalDate)}
             </Text>
           </View>
         ))}

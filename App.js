@@ -1,5 +1,5 @@
 import "react-native-gesture-handler";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { ActivityIndicator, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -14,6 +14,9 @@ import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { useAppTheme } from "./hooks/useAppTheme";
 import { DialogProvider } from "./context/DialogContext";
+import Constants from "expo-constants";
+import OneSignal from "react-native-onesignal";
+import { notifyRealtimeEvent } from "./hooks/notificationCenter";
 
 function Root() {
   const { theme, ready } = useAppTheme();
@@ -22,6 +25,27 @@ function Root() {
     Manrope_600SemiBold,
     Manrope_700Bold
   });
+  const oneSignalInitialized = useRef(false);
+
+  useEffect(() => {
+    const appId = Constants?.expoConfig?.extra?.onesignalAppId;
+    const canSetAppId = typeof OneSignal?.setAppId === "function";
+    if (!appId || oneSignalInitialized.current || !canSetAppId) {
+      return;
+    }
+
+    oneSignalInitialized.current = true;
+    OneSignal.setAppId(appId);
+    OneSignal.setNotificationWillShowInForegroundHandler((event) => {
+      const notification = event.getNotification();
+      event.complete(notification);
+      notifyRealtimeEvent({ type: "notification", notification });
+    });
+    OneSignal.setNotificationOpenedHandler(() => {
+      notifyRealtimeEvent({ type: "notification", opened: true });
+    });
+    OneSignal.promptForPushNotificationsWithUserResponse(() => {});
+  }, []);
 
   const navTheme = {
     ...DefaultTheme,

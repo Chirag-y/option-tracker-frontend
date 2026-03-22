@@ -7,7 +7,8 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View
+  View,
+  RefreshControl
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../services/api";
@@ -15,6 +16,7 @@ import { AuthContext } from "../context/AuthContext";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { useDialog } from "../hooks/useDialog";
 import { parseApiError } from "../utils/errors";
+import { formatDisplayDate } from "../utils/date";
 import { money } from "../theme";
 
 function Input({ theme, icon, ...props }) {
@@ -38,6 +40,7 @@ export default function UserBalanceScreen() {
   const [teamWithdrawals, setTeamWithdrawals] = useState([]);
   const [share, setShare] = useState("");
   const [invested, setInvested] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = async () => {
     try {
@@ -55,20 +58,28 @@ export default function UserBalanceScreen() {
     }
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  };
+
   useEffect(() => {
     load();
   }, [user?.id, user?.email]);
 
   const saveMySplit = async () => {
     try {
-      await api.patch("/users/me", {
+      const data = await api.patch("/users/me", {
         sharePercentage: Number(share || 0),
         investedAmount: Number(invested || 0)
       });
       await refreshMe();
       await load();
+      // console.log({ data });
       dialog.show("Saved", "Your split settings are updated");
     } catch (err) {
+      console.log({ err });
       dialog.show("Update error", parseApiError(err, "Update failed"));
     }
   };
@@ -78,26 +89,33 @@ export default function UserBalanceScreen() {
       style={[styles.container, { backgroundColor: theme.colors.bg }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[theme.colors.primary]}
+          tintColor={theme.colors.primary}
+        />
+      }>
         <Text style={[styles.title, { color: theme.colors.text, fontFamily: theme.fonts.bold }]}>Team Balances</Text>
-      {users.map((u) => (
-        <View style={[styles.userCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]} key={u._id}>
-          <Text style={[styles.name, { color: theme.colors.text, fontFamily: theme.fonts.bold }]}>{u.name}</Text>
-          <Text style={[styles.meta, { color: theme.colors.muted, fontFamily: theme.fonts.regular }]}>{u.email}</Text>
-          <Text style={[styles.meta, { color: theme.colors.muted, fontFamily: theme.fonts.regular }]}>
-            Share {u.sharePercentage}%
-          </Text>
-          <Text style={[styles.meta, { color: theme.colors.muted, fontFamily: theme.fonts.regular }]}>
-            Invested: {money(u.investedAmount)}
-          </Text>
-          <Text style={[styles.meta, { color: Number(u.currentBalance) - Number(u.investedAmount) >= 0 ? theme.colors.profit : theme.colors.loss, fontFamily: theme.fonts.medium }]}>
-            P/L: {money(Number(u.currentBalance) - Number(u.investedAmount))}
-          </Text>
-          <Text style={[styles.balance, { color: theme.colors.primary, fontFamily: theme.fonts.bold }]}>
-            Final: {money(u.currentBalance)}
-          </Text>
-        </View>
-      ))}
+        {users.map((u) => (
+          <View style={[styles.userCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]} key={u._id}>
+            <Text style={[styles.name, { color: theme.colors.text, fontFamily: theme.fonts.bold }]}>{u.name}</Text>
+            <Text style={[styles.meta, { color: theme.colors.muted, fontFamily: theme.fonts.regular }]}>{u.email}</Text>
+            <Text style={[styles.meta, { color: theme.colors.muted, fontFamily: theme.fonts.regular }]}>
+              Share {u.sharePercentage}%
+            </Text>
+            <Text style={[styles.meta, { color: theme.colors.muted, fontFamily: theme.fonts.regular }]}>
+              Invested: {money(u.investedAmount)}
+            </Text>
+            <Text style={[styles.meta, { color: Number(u.currentBalance) - Number(u.investedAmount) >= 0 ? theme.colors.profit : theme.colors.loss, fontFamily: theme.fonts.medium }]}>
+              P/L: {money(Number(u.currentBalance) - Number(u.investedAmount))}
+            </Text>
+            <Text style={[styles.balance, { color: theme.colors.primary, fontFamily: theme.fonts.bold }]}>
+              Final: {money(u.currentBalance)}
+            </Text>
+          </View>
+        ))}
 
         <Text style={[styles.title, { color: theme.colors.text, fontFamily: theme.fonts.bold }]}>Update My Allocation</Text>
         <Input theme={theme} icon="pie-chart-outline" placeholder="My Share %" value={share} onChangeText={setShare} keyboardType="numeric" />
@@ -113,7 +131,7 @@ export default function UserBalanceScreen() {
               {w.userId?.name || "User"} - Rs {Number(w.amount || 0).toFixed(2)}
             </Text>
             <Text style={[styles.meta, { color: theme.colors.muted, fontFamily: theme.fonts.regular }]}>
-              {new Date(w.withdrawalDate).toISOString().slice(0, 10)}
+              {formatDisplayDate(w.withdrawalDate)}
             </Text>
             <Text style={[styles.meta, { color: theme.colors.muted, fontFamily: theme.fonts.regular }]}>
               {w.userId?.email || ""}

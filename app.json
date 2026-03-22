@@ -12,6 +12,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#0e1814"
     },
+    "ios": {
+      "bundleIdentifier": "com.chiragyadav.marketmoneytracking",
+      "userInterfaceStyle": "automatic"
+    },
     "android": {
       "userInterfaceStyle": "automatic",
       "adaptiveIcon": {

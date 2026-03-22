@@ -1,5 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Calendar } from "react-native-calendars";
 import { BlurView } from "expo-blur";
@@ -8,6 +8,9 @@ import api from "../services/api";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { useDialog } from "../hooks/useDialog";
 import { parseApiError } from "../utils/errors";
+import { formatDisplayDate } from "../utils/date";
+import { notifyRealtimeEvent } from "../hooks/notificationCenter";
+import FilterSelect from "../components/FilterSelect";
 
 function Input({ theme, label, icon, inputRef, error, ...props }) {
   return (
@@ -35,8 +38,18 @@ function Input({ theme, label, icon, inputRef, error, ...props }) {
   );
 }
 
+const INSTRUMENT_OPTIONS = [
+  { value: "NIFTY", label: "Nifty" },
+  { value: "SENSEX", label: "Sensex" },
+  { value: "CRUDEOIL", label: "Crudeoil" },
+  { value: "BANKNIFTY", label: "Banknifty" },
+  { value: "COMMODITY", label: "Commodity" },
+  { value: "STOCK_OPTION", label: "Stock Option" },
+  { value: "OTHER_INDICES", label: "Other Indices" }
+];
+
 const getInitialForm = () => ({
-  instrument: "NIFTY",
+  instrument: INSTRUMENT_OPTIONS[0].value,
   optionType: "CALL",
   strikePrice: "",
   resultType: "PROFIT",
@@ -48,7 +61,6 @@ const getInitialForm = () => ({
 export default function AddTradeScreen({ navigation }) {
   const { theme } = useAppTheme();
   const dialog = useDialog();
-  const instrumentInputRef = useRef(null);
   const [form, setForm] = useState(getInitialForm);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -121,6 +133,7 @@ export default function AddTradeScreen({ navigation }) {
         charges: chargesNumber
       });
       setSuccessModalVisible(true);
+      notifyRealtimeEvent({ type: "trade_added" });
     } catch (err) {
       dialog.show("Trade error", parseApiError(err, "Failed to add trade"));
     } finally {
@@ -129,7 +142,11 @@ export default function AddTradeScreen({ navigation }) {
   };
 
   return (
-    <>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 100}
+    >
       <KeyboardAwareScrollView
         style={[styles.container, { backgroundColor: theme.colors.bg }]}
         contentContainerStyle={styles.content}
@@ -139,15 +156,12 @@ export default function AddTradeScreen({ navigation }) {
         extraHeight={120}
         extraScrollHeight={100}
       >
-        <Input
-          theme={theme}
+        <FilterSelect
           label="Instrument"
-          icon="stats-chart-outline"
-          placeholder="NIFTY"
           value={form.instrument}
-          onChangeText={(v) => setField("instrument", v)}
-          inputRef={instrumentInputRef}
-          error={errors.instrument}
+          options={INSTRUMENT_OPTIONS}
+          onSelect={(value) => setField("instrument", value)}
+          helper={errors.instrument}
         />
 
         <Text style={[styles.label, { color: theme.colors.text, fontFamily: theme.fonts.medium }]}>Option Type</Text>
@@ -181,7 +195,7 @@ export default function AddTradeScreen({ navigation }) {
           onPress={() => setDateModalVisible(true)}
         >
           <Ionicons name="calendar-outline" size={15} color={theme.colors.muted} />
-          <Text style={[styles.dateText, { color: theme.colors.text, fontFamily: theme.fonts.regular }]}>{form.tradeDate}</Text>
+          <Text style={[styles.dateText, { color: theme.colors.text, fontFamily: theme.fonts.regular }]}>{formatDisplayDate(form.tradeDate)}</Text>
           <Ionicons name="chevron-down-outline" size={16} color={theme.colors.muted} />
         </Pressable>
         {!!errors.tradeDate && <Text style={[styles.errorText, { color: theme.colors.loss, fontFamily: theme.fonts.regular }]}>{errors.tradeDate}</Text>}
@@ -249,7 +263,6 @@ export default function AddTradeScreen({ navigation }) {
                   setSuccessModalVisible(false);
                   setForm(getInitialForm());
                   setErrors({});
-                  setTimeout(() => instrumentInputRef.current?.focus(), 120);
                 }}
               >
                 <Text style={{ color: theme.colors.text, fontFamily: theme.fonts.medium }}>Add More</Text>
@@ -267,7 +280,7 @@ export default function AddTradeScreen({ navigation }) {
           </BlurView>
         </View>
       </Modal>
-    </>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -277,7 +290,8 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 96
+    paddingBottom: 96,
+    flexGrow: 1
   },
   label: {
     marginBottom: 5
@@ -351,6 +365,12 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 16,
+    marginBottom: 8
+  },
+  option: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
     marginBottom: 8
   },
   modalCloseBtn: {
